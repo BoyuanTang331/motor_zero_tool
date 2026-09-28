@@ -1,0 +1,25 @@
+# Taihu 转向电机标零工具配置（key: value，# 注释）
+# 与 taihu_steer_driver_config.yaml 的参数保持一致（affinity/priority/cycle）
+
+# ENI 配置文件路径（IgH 从站对表；本仓库 config/NIIC_ENI_M0_steer.xml 的拷贝）
+eni_file: /home/niic/taihu_zero_tool/config/NIIC_ENI_M0_steer.xml
+
+# 驱动 YAML（motor_offset 写回目标；写前自动备份）
+driver_yaml_path: /home/niic/ros2_ws/src/taihu_steer_driver/config/taihu_steer_driver_config.yaml
+
+# 回执输出目录（自动创建）
+receipt_dir: /home/niic/taihu_zero_tool/receipts
+
+# IgH master 索引（与 ethercatctl 默认 master 0 一致）
+master_id: 0
+
+# 实时周期线程绑核与优先级（对齐 taihu_steer_driver_config.yaml: cpu_affinity=1, priority=90）
+cpu_affinity: 1
+priority: 90
+cycle_time_ns: 5000000
+
+# 编码器分辨率（counts/rev，与 taihu_steer_driver_config.yaml 一致）
+encoder_resolution: 262144
+
+# 电机方向（与 taihu_steer_driver_config.yaml motor_dir 一致，逗号分隔）
+motor_dir: -1,-1,-1,-1

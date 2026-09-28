@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Taihu 转向电机标零工具
+Comment=Chassis steering motor zero calibration (IgH + QT)
+Exec=pkexec /home/niic/taihu_zero_tool/launch/start_taihu_zero.sh
+Icon=applications-engineering
+Terminal=true
+Categories=Engineering;Development;
