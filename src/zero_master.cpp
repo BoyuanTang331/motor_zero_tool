@@ -11,8 +11,15 @@ ZeroMaster::~ZeroMaster() { stop(); }
 
 bool ZeroMaster::start(const MasterOptions& options, std::string* error) {
   options_ = options;
-  task_ = std::make_unique<ecat::task>(options.master_id);
+  // 支持同一进程内 stop 后再次 start：上一轮的 PDO 轴句柄指向旧 task 的
+  // domain 内存，task 重建后全部悬垂，必须先清空再由 config_callback 重新注册
+  axes_.clear();
+  axis_count_ = 0;
+  for (auto& s : snapshots_) s.pdo_valid.store(0);
   try {
+    // task 构造函数内部执行 IgH master reserve——必须放进 try：
+    // reserve 失败（EBUSY，如上一轮未 release / 驱动占用）时转错误框而非 terminate 闪退
+    task_ = std::make_unique<ecat::task>(options.master_id);
     task_->priority(options.priority);
     cpu_set_t cpus;
     CPU_ZERO(&cpus);
@@ -112,9 +119,12 @@ bool ZeroMaster::start(const MasterOptions& options, std::string* error) {
     const auto* axis = axes_[i].get();
     snapshots_[i].slave_pos.store(axis->slave_pos);
     try {
-      const auto info = task_->get_slave_info(axis->slave_pos);
-      snapshots_[i].vendor_id.store(static_cast<std::int32_t>(info.id.vendor_id));
-      snapshots_[i].product_code.store(static_cast<std::int32_t>(info.id.product_code));
+      // slave_config_info 头文件仅有前置声明（完整定义在 .so 私有源码），
+      // 无法解引用；改用 task 自带的 axis_vid/axis_pid 取 vendor/product
+      snapshots_[i].vendor_id.store(
+          static_cast<std::int32_t>(task_->axis_vid(axis->slave_pos)));
+      snapshots_[i].product_code.store(
+          static_cast<std::int32_t>(task_->axis_pid(axis->slave_pos)));
     } catch (...) {
       // vendor/product 读取失败不致命，界面显示 0
     }
@@ -144,6 +154,11 @@ void ZeroMaster::stop() noexcept {
     task_->break_();
     task_->wait();
     task_->resource_recovery();
+    // 归还 IgH master 独占预留（与 task 构造时的 reserve 配对）。
+    // 缺这一步时下次 start 的 task 构造会 reserve EBUSY → 闪退；
+    // release 后立刻销毁旧对象，避免析构与重建的时序冲突
+    task_->release();
+    task_.reset();
   } catch (...) {
     // 关闭路径不抛异常
   }

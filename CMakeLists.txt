@@ -39,13 +39,16 @@ set_target_properties(ecat_cpp PROPERTIES
 set(DATP_DIR "" CACHE PATH "厂商 datp 库安装目录（含 datp/qiuniu 头文件与 libdatp.so）")
 if(DATP_DIR)
   include_directories("${DATP_DIR}/datp")
+  # 兼容厂商标准布局（工控机 /usr/necro：头文件在 include/qiuniu/ 下）
+  include_directories("${DATP_DIR}/include")
 endif()
 
 find_library(DATP_LIBRARY NAMES datp
   PATHS ${DATP_DIR} /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu
-        /home/niic/datp /opt/datp)
+        /home/niic/datp /opt/datp /usr/necro/lib)
 find_library(QIUNIU_LIBRARY NAMES qiuniu
-  PATHS ${DATP_DIR} /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu)
+  PATHS ${DATP_DIR} /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu
+        /usr/necro/lib)
 if(NOT DATP_LIBRARY AND NOT QIUNIU_LIBRARY)
   message(WARNING "libdatp/libqiuniu 均未找到；配置仍可继续（代码侧有 __has_include 保护），"
                   "但运行时 ldd libethercat-cpp.so 必须能解析到厂商库，"

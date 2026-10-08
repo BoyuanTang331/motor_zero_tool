@@ -12,6 +12,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <thread>
 
 namespace taihu_zero {
 

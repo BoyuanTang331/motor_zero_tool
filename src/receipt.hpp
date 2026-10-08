@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "cia402_zeroing.hpp"
+#include "zero_master.hpp"  // AxisSnapshot（快照 POD 定义于此）
 
 namespace taihu_zero {
 

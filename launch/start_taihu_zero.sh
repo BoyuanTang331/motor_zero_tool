@@ -55,9 +55,13 @@ TOOL_EXIT=$?
 if [ "$DRIVER_RESTART" = "true" ]; then
   echo -e "${YELLOW}[收尾] 重启底盘驱动...${NC}"
   # 恢复 ROS2 环境（与 bringup_chassis.sh 一致）
+  # set -u 与 ROS setup.bash 冲突（AMENT_TRACE_SETUP_FILES: unbound variable），
+  # source 前后临时关闭 nounset；WS 默认指向 slam_nav 实际工作空间
+  set +u
   [ -f "/opt/ros/humble/setup.bash" ] && source "/opt/ros/humble/setup.bash"
-  WS="${ROS2_WS:-/home/niic/ros2_ws}"
+  WS="${ROS2_WS:-/home/niic/slam_nav/merman_slam/fast_lio}"
   [ -f "$WS/install/setup.bash" ] && source "$WS/install/setup.bash"
+  set -u
   nohup bash -c "$DRIVER_LAUNCH" >"$DRIVER_LOG" 2>&1 &
   echo -e "${GREEN}  ✓ 底盘驱动已在后台重启（日志: $DRIVER_LOG）${NC}"
   echo -e "${YELLOW}  提示: 请确认 4 关节 q≈0（±0.5°）以验证标零效果${NC}"

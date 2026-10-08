@@ -125,7 +125,14 @@ public:
   bool sdo_read(std::uint16_t slave_pos, std::uint16_t idx,
                 std::uint16_t sub_idx, T* value, std::string* error) {
     try {
-      *value = task_->sdo_upload<T>(slave_pos, {idx, sub_idx}, false);
+      // ecat::task::sdo_upload 为非模板（仅返回 uint16_t，被 task.hpp 声明遮蔽）；
+      // 通用宽度读取（i8/u16/i32）走 master 的模板版本 sdo_upload<T>
+      ecat::master* m = task_->get_master_ptr();
+      if (!m) {
+        if (error) *error = "task 未持有 master（主站未启动）";
+        return false;
+      }
+      *value = m->sdo_upload<T>(slave_pos, ecat::sdo_idx{idx, sub_idx}, false);
       return true;
     } catch (const std::exception& e) {
       if (error) *error = e.what();
